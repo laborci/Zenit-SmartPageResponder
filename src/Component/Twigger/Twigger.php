@@ -1,6 +1,7 @@
 <?php namespace Zenit\Bundle\SmartPageResponder\Component\Twigger;
 
 use Zenit\Bundle\SmartPageResponder\Component\SmartPageResponder;
+use Zenit\Bundle\SmartPageResponder\Config;
 use Zenit\Core\Event\Component\EventManager;
 use Zenit\Core\Module\Component\ModuleLoader;
 use Zenit\Core\ServiceManager\Component\Service;
@@ -21,19 +22,13 @@ class Twigger implements SharedService{
 	public function render($template, $viewModel){ return $this->getTwigEnvironment()->render($template, $viewModel); }
 
 	protected function getTwigEnvironment(): Environment{
-
-		ModuleLoader::Service()->get(SmartPageResponder::class);
+		$config = Config::Service();
 
 		if (is_null($this->twigEnvironment)){
 			$loader = new FilesystemLoader();
 
-			if (array_key_exists('sources', env('twig')))
-				foreach (env("twig.sources") as $namespace => $path)
-					if (is_dir($path))
-						$loader->addPath($path, $namespace);
-
-			$twigEnvironment = new Environment($loader, ['cache' => env("twig.cache"), 'debug' => env("twig.debug")]);
-			if (env("twig.debug")) $twigEnvironment->addExtension(new DebugExtension());
+			$twigEnvironment = new Environment($loader, ['cache' => $config->twigCache, 'debug' => $config->twigDebug]);
+			if ($config->twigDebug) $twigEnvironment->addExtension(new DebugExtension());
 			$this->twigEnvironment = $twigEnvironment;
 			EventManager::fire(self::EVENT_TWIG_ENVIRONMENT_CREATED, $twigEnvironment);
 		}
